@@ -15,7 +15,7 @@ const Register = () => {
         password,
       });
       if (success) {
-        navigate("/dashboard"); // ✅ Redirect to Dashboard
+        navigate("/login"); 
       } else {
         alert("Invalid credentials. Try again.");
       }

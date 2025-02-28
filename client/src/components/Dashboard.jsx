@@ -89,7 +89,7 @@ const Dashboard = () => {
       );
 
       // Extract the filename from the Content-Disposition header
-      let filename = "downloaded_file"; // Fallback name
+      let filename = "File-From-Website"; // Fallback name
       const disposition = res.headers["content-disposition"];
 
       if (disposition) {

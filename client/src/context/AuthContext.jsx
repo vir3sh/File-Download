@@ -24,10 +24,10 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", res.data.token);
       setUser({ token: res.data.token });
 
-      return true; // ✅ Login successful
+      return true; 
     } catch (error) {
       console.error("Login failed", error);
-      return false; // ❌ Login failed
+      return false; 
     }
   };
 
