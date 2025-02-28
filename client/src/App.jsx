@@ -4,6 +4,7 @@ import {
   Routes,
   Navigate,
 } from "react-router-dom";
+import React from "react";
 import Register from "./components/Register";
 import Login from "./components/Login";
 import UploadFile from "./components/UploadFile";
@@ -15,7 +16,13 @@ import { useContext } from "react";
 
 const PrivateRoute = ({ element }) => {
   const { user } = useContext(AuthContext);
-  return user ? element : <Navigate to="/login" />;
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+
+  return element;
 };
 
 function App() {

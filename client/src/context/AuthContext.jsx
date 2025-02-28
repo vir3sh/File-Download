@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import React from "react";
 
 export const AuthContext = createContext();
 
@@ -19,8 +20,10 @@ export const AuthProvider = ({ children }) => {
         username,
         password,
       });
+
       localStorage.setItem("token", res.data.token);
       setUser({ token: res.data.token });
+
       return true; // ✅ Login successful
     } catch (error) {
       console.error("Login failed", error);

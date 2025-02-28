@@ -10,16 +10,21 @@ const Dashboard = () => {
   // Fetch user files
   useEffect(() => {
     const fetchFiles = async () => {
+      const token = localStorage.getItem("token");
+
       try {
-        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/files", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        setFiles(res.data);
+        console.log(res.data); // ✅ This is working
+        setFiles(res.data); // Add this line to update state
       } catch (error) {
-        console.error("Error fetching files:", error);
+        console.error("Error fetching files", error);
       }
     };
+
     fetchFiles();
   }, []);
 
@@ -97,55 +102,71 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-xl font-bold mb-4">Dashboard</h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg">
+      <h2 className="text-2xl font-bold mb-6 text-center">Dashboard</h2>
 
       {/* File Upload */}
-      <div className="mb-4">
-        <input type="file" onChange={handleFileChange} className="border p-2" />
+      <div className="mb-6">
+        <input
+          type="file"
+          onChange={handleFileChange}
+          className="border p-2 w-full rounded-md"
+        />
         <button
           onClick={handleUpload}
-          className="bg-blue-500 text-white p-2 ml-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md mt-2 w-full"
         >
-          Upload
+          Upload File
         </button>
       </div>
 
       {/* File List */}
-      <h3 className="text-lg font-semibold">Your Files</h3>
-      <ul>
-        {files.map((file) => (
-          <li key={file._id} className="flex justify-between p-2 border-b">
-            {file.originalName}
-            <button
-              onClick={() => handleDelete(file._id)}
-              className="bg-red-500 text-white p-1"
+      <h3 className="text-lg font-semibold mb-2">Your Files</h3>
+      <ul className="border rounded-md p-4 bg-gray-100">
+        {files.length === 0 ? (
+          <p className="text-gray-500">No files uploaded yet.</p>
+        ) : (
+          files.map((file) => (
+            <li
+              key={file._id}
+              className="flex justify-between items-center bg-white shadow-sm p-2 rounded-md mb-2"
             >
-              Delete
-            </button>
-          </li>
-        ))}
+              <span className="truncate">{file.originalName}</span>
+              <span className="truncate">{file.accessCode}</span>
+              <button
+                onClick={() => handleDelete(file._id)}
+                className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded-md text-sm"
+              >
+                Delete
+              </button>
+            </li>
+          ))
+        )}
       </ul>
 
       {/* File Download */}
-      <div className="mt-4">
+      <div className="mt-6">
         <input
           type="text"
           placeholder="Enter Access Code"
           value={accessCode}
           onChange={(e) => setAccessCode(e.target.value)}
-          className="border p-2"
+          className="border p-2 w-full rounded-md"
         />
         <button
           onClick={handleDownload}
-          className="bg-green-500 text-white p-2 ml-2"
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md mt-2 w-full"
         >
-          Download
+          Download File
         </button>
       </div>
 
       {/* Message Display */}
-      {message && <p className="mt-4 text-blue-600">{message}</p>}
+      {message && (
+        <p className="mt-4 text-center text-lg font-semibold text-blue-600">
+          {message}
+        </p>
+      )}
     </div>
   );
 };

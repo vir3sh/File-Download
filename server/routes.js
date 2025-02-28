@@ -78,8 +78,12 @@ router.post(
 
 // Get user files
 router.get("/files", authMiddleware, async (req, res) => {
-  const files = await File.find({ owner: req.user.userId });
-  res.json(files);
+  try {
+    const files = await File.find({ owner: req.user.userId });
+    res.json(files);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch files" });
+  }
 });
 
 // Delete file
