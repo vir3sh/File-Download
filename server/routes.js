@@ -37,7 +37,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Ensure upload directory exists
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
@@ -47,6 +46,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => {
+    // Store file with unique ID but keep original name in database
     const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
     cb(null, uniqueName);
   },
@@ -62,14 +62,18 @@ router.post(
     try {
       const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
       const newFile = new File({
-        filename: req.file.filename,
-        originalName: req.file.originalname,
+        filename: req.file.filename, // Unique filename for storage
+        originalName: req.file.originalname, // Original filename preserved
         filePath: req.file.path,
         owner: req.user.userId,
         accessCode,
       });
       await newFile.save();
-      res.json({ message: "File uploaded successfully", accessCode });
+      res.json({
+        message: "File uploaded successfully",
+        accessCode,
+        filename: req.file.originalname, // Return original filename in response
+      });
     } catch (error) {
       res.status(500).json({ error: "File upload failed" });
     }
@@ -97,18 +101,37 @@ router.post("/download", async (req, res) => {
     const { accessCode } = req.body;
     const file = await File.findOne({ accessCode });
 
-    if (!file) return res.status(404).json({ error: "Invalid access code" });
+    if (!file) {
+      return res.status(404).json({ error: "Invalid access code" });
+    }
 
-    const filePath = file.filePath; // Ensure this is correct
-    const fileName = file.originalName || "downloaded_file";
+    const filePath = file.filePath;
+    const originalName = file.originalName;
 
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-    res.setHeader("Content-Type", "application/octet-stream");
+    // Get MIME type based on file extension (or fallback to octet-stream)
+    const ext = path.extname(originalName).toLowerCase();
+    const mimeType = getMimeType(ext) || "application/octet-stream";
 
-    res.download(filePath, fileName, (err) => {
+    console.log(
+      `Serving file: ${filePath} as ${originalName} with type ${mimeType}`
+    );
+
+    // Set the correct content type
+    res.setHeader("Content-Type", mimeType);
+
+    // Set the correct content disposition with proper filename formatting
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${originalName}"; filename*=UTF-8''${encodeURIComponent(
+        originalName
+      )}`
+    );
+
+    // Send the file
+    res.sendFile(path.resolve(filePath), (err) => {
       if (err) {
-        console.error("Download error:", err);
-        res.status(500).json({ error: "File download failed" });
+        console.error("Error sending file:", err);
+        res.status(500).send("Error sending file");
       }
     });
   } catch (error) {
@@ -116,5 +139,30 @@ router.post("/download", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+// Helper function to get MIME type based on file extension
+function getMimeType(ext) {
+  const mimeTypes = {
+    ".txt": "text/plain",
+    ".pdf": "application/pdf",
+    ".doc": "application/msword",
+    ".docx":
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xls": "application/vnd.ms-excel",
+    ".xlsx":
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".csv": "text/csv",
+    ".mp3": "audio/mpeg",
+    ".mp4": "video/mp4",
+    ".zip": "application/zip",
+    // Add more as needed
+  };
+
+  return mimeTypes[ext];
+}
 
 module.exports = router;

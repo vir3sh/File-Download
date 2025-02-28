@@ -1,38 +1,53 @@
 import { useState } from "react";
-import axios from "axios";
 import React from "react";
+
 const DownloadFile = () => {
   const [accessCode, setAccessCode] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleDownload = async () => {
-    try {
-      const res = await axios.post(
-        `${import.meta.env.REACT_APP_API_URL}/download`,
-        { accessCode },
-        { responseType: "blob" }
-      );
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "file");
-      document.body.appendChild(link);
-      link.click();
-    } catch (error) {
-      alert("Invalid access code");
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api"; // Using VITE_API_URL
+
+  const handleDownload = () => {
+    if (!accessCode.trim()) {
+      setMessage("Please enter an access code");
+      return;
     }
+
+    // Create a form dynamically
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = `${apiUrl}/download`;
+    form.target = "_blank"; // Open in new tab to handle download properly
+
+    // Add hidden input for accessCode
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "accessCode";
+    input.value = accessCode;
+    form.appendChild(input);
+
+    // Append form to body, submit, and remove it
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    setMessage("Download initiated");
   };
 
   return (
-    <div>
+    <div className="download-container">
       <h2>Download File</h2>
-      <input
-        type="text"
-        placeholder="Enter Access Code"
-        value={accessCode}
-        onChange={(e) => setAccessCode(e.target.value)}
-        required
-      />
-      <button onClick={handleDownload}>Download</button>
+      <div className="input-group">
+        <input
+          type="text"
+          placeholder="Enter Access Code"
+          value={accessCode}
+          onChange={(e) => setAccessCode(e.target.value)}
+          required
+        />
+        <button onClick={handleDownload}>Download</button>
+      </div>
+      {message && <p className="message">{message}</p>}
     </div>
   );
 };

@@ -18,8 +18,8 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log(res.data); // ✅ This is working
-        setFiles(res.data); // Add this line to update state
+        // console.log(res.data);
+        setFiles(res.data);
       } catch (error) {
         console.error("Error fetching files", error);
       }
@@ -88,22 +88,55 @@ const Dashboard = () => {
         { responseType: "blob" }
       );
 
-      const url = window.URL.createObjectURL(new Blob([res.data]));
+      // Extract the filename from the Content-Disposition header
+      let filename = "downloaded_file"; // Fallback name
+      const disposition = res.headers["content-disposition"];
+
+      if (disposition) {
+        // Try to match both standard and RFC5987 encoded filenames
+        const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+        const matches = filenameRegex.exec(disposition);
+        if (matches && matches[1]) {
+          filename = matches[1].replace(/['"]/g, "");
+        }
+
+        // Try RFC5987 encoded format as fallback
+        const filenameStarRegex = /filename\*=UTF-8''([^;\n]*)/;
+        const starMatches = filenameStarRegex.exec(disposition);
+        if (starMatches && starMatches[1]) {
+          filename = decodeURIComponent(starMatches[1]);
+        }
+      }
+
+      console.log("Extracted filename:", filename);
+
+      // Create blob URL with the correct type from response
+      const contentType =
+        res.headers["content-type"] || "application/octet-stream";
+      const blob = new Blob([res.data], { type: contentType });
+      const url = window.URL.createObjectURL(blob);
+
+      // Create and trigger download
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "file");
+      link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+
       setMessage("Download started");
     } catch (error) {
       console.error("Download failed:", error);
-      setMessage("Invalid access code");
+      setMessage("Invalid access code or download failed");
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center">Dashboard</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">DASHBOARD</h2>
 
       {/* File Upload */}
       <div className="mb-6">
